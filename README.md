@@ -1,25 +1,26 @@
----
-- name: Install Java
-  hosts: all
+# Домашнее задание к занятию "08.02 Работа с Playbook"
+```
+- name: Install Java #Установка Java
+  hosts: all #на всех хостах
   tasks:
-    - name: Set facts for Java 11 vars
+    - name: Set facts for Java 11 vars 
       set_fact:
-        java_home: "/opt/jdk/{{ java_jdk_version }}"
+        java_home: "/opt/jdk/{{ java_jdk_version }}" #настройка значения системной переменной окружения JAVA_HOME
       tags: java
     - name: Upload .tar.gz file containing binaries from local storage
       copy:
-        src: "{{ java_oracle_jdk_package }}"
-        dest: "/tmp/jdk-{{ java_jdk_version }}.tar.gz"
+        src: "{{ java_oracle_jdk_package }}" #Загрузка на целевой хост архива с JAVA (откуда)
+        dest: "/tmp/jdk-{{ java_jdk_version }}.tar.gz" #(куда, на настраиваемый хост)
       register: download_java_binaries
-      until: download_java_binaries is succeeded
+      until: download_java_binaries is succeeded #Ожидание окончание загрузки файла на хост перед тем как идти дальше
       tags: java
-    - name: Ensure installation dir exists
+    - name: Ensure installation dir exists #Проверка существования директории по пути JAVA_HOME
       become: true
       file:
         state: directory
         path: "{{ java_home }}"
       tags: java
-    - name: Extract java in the installation directory
+    - name: Extract java in the installation directory #Распаковка архива с JAVA 
       become: true
       unarchive:
         copy: false
@@ -29,33 +30,33 @@
         creates: "{{ java_home }}/bin/java"
       tags:
         - java
-    - name: Export environment variables
+    - name: Export environment variables #Добавление переменных окружения в профиль пользователя 
       become: true
       template:
         src: jdk.sh.j2
         dest: /etc/profile.d/jdk.sh
       tags: java
-- name: Install Elasticsearch
+- name: Install Elasticsearch #Установка Elastic
   hosts: elasticsearch
   tasks:
     - name: Upload tar.gz Elasticsearch from remote URL
       get_url:
         url: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ elastic_version }}-linux-x86_64.tar.gz"
         dest: "/tmp/elasticsearch-{{ elastic_version }}-linux-x86_64.tar.gz"
-        mode: 0755
-        timeout: 60
-        force: true
-        validate_certs: false
-      register: get_elastic
-      until: get_elastic is succeeded
+        mode: 0755 #Права доступа на папку
+        timeout: 60 #Перерыв между запроса на скачивание при неудачной попытке 
+        force: true #Всегда скачивать
+        validate_certs: false  # не проверять сертификаты
+      register: get_elastic #результат скачивания записать в переменную get_elastic
+      until: get_elastic is succeeded #ждать пока не скачается
       tags: elastic
-    - name: Create directrory for Elasticsearch
+    - name: Create directrory for Elasticsearch #Создание директории для эластика
       become: true
       file:
         state: directory
         path: "{{ elastic_home }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ ansible_user }}" #установка владельца
+        group: "{{ ansible_user }}" #установка группы
         recurse: true
       tags: elastic
     - name: Extract Elasticsearch in the installation directory
@@ -65,25 +66,25 @@
         src: "/tmp/elasticsearch-{{ elastic_version }}-linux-x86_64.tar.gz"
         dest: "{{ elastic_home }}"
         extra_opts: [--strip-components=1]
-        creates: "{{ elastic_home }}/bin/elasticsearch"
+        creates: "{{ elastic_home }}/bin/elasticsearch" #Если уже существует файл elasticsearch, то не расыпаковывать
       tags:
         - elastic
-    - name: Set environment Elastic
+    - name: Set environment Elastic #Запись переменных окружения в настройки профиль пользователя
       become: true
       template:
         src: templates/elk.sh.j2
         dest: /etc/profile.d/elk.sh
       tags: elastic
-    - name: Set config for Elastic
+    - name: Set config for Elastic #Настройка конфигурационного файла для Elasticsearch
       become: true
       template:
         src: elasticsearch.yml.j2
         dest: "{{ elastic_config }}/elasticsearch.yml"
       tags: elastic        
-- name: Install Kibana
+- name: Install Kibana #Установка Kibana
   hosts: kibana
   tasks:
-    - name: Upload tar.gz Kibana from remote URL
+    - name: Upload tar.gz Kibana from remote URL #Скачивание архива и загрузка на целевой хост
       get_url:
         url: "https://artifacts.elastic.co/downloads/kibana/kibana-{{ kibana_version }}-linux-x86_64.tar.gz"
         dest: "/tmp/kibana-{{ kibana_version }}-linux-x86_64.tar.gz"
@@ -92,9 +93,9 @@
         force: true
         validate_certs: false
       register: get_kibana
-      until: get_kibana is succeeded
+      until: get_kibana is succeeded #Дождаться скачивания
       tags: kibana
-    - name: Create directrory for Kibana
+    - name: Create directrory for Kibana #Создание каталога для Kibana c назначением владельца и группы
       become: true
       file:
         state: directory
@@ -102,7 +103,7 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         recurse: true
-    - name: Create data directrory for Kibana
+    - name: Create data directrory for Kibana #Создание каталога для данных с указанием владельца и его группы
       become: true
       file:
         state: directory
@@ -111,7 +112,7 @@
         group: "{{ ansible_user }}"
         recurse: true
       tags: kibana
-    - name: Extract kibana in the installation directory
+    - name: Extract kibana in the installation directory #Распаковка архива
       become: true
       unarchive:
         copy: false
@@ -121,13 +122,13 @@
         creates: "{{ kibana_home }}/bin/kibana"
       tags:
         - kibana
-    - name: Set environment Kibana
+    - name: Set environment Kibana #Настройка системных переменных в профиле пользователя
       become: true
       template:
         src: templates/kib.sh.j2
         dest: /etc/profile.d/kib.sh
       tags: kibana
-    - name: Set config for Kibana
+    - name: Set config for Kibana #Настройка для Kibana
       become: true
       template:
         src: kibana.yml.j2
@@ -194,4 +195,7 @@
       tags:
         - logstash
         - logstash_cfg        
+```
 
+
+---

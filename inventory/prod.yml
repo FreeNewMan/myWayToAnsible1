@@ -1,6 +1,22 @@
 ---
 elasticsearch:
   hosts:
-    localhost:
+    centos7:
+      ansible_host: 192.168.186.140
       ansible_connection: ssh
-      ansible_user: root
+      ansible_user: vagrant
+      ansible_ssh_private_key_file: ./keys/private_key
+kibana:
+  hosts:
+    centos7:
+      ansible_host: 192.168.186.140
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_private_key_file: ./keys/private_key
+logstash:
+  hosts:
+    centos7_1:
+      ansible_host: 192.168.186.141
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_private_key_file: ./keys/private_key1      

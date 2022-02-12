@@ -1,0 +1,5 @@
+---
+kibana_version: "7.16.3"
+kibana_home: "/opt/kibana/{{ kibana_version }}"
+kibana_config: "{{kibana_home}}/config"
+
